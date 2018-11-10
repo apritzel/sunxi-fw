@@ -4,7 +4,7 @@ CFLAGS=-Wall -g -O
 
 all: sunxi-fw
 
-sunxi-fw: sunxi-img.o sunxi-mbr.o sunxi-uboot.o sunxi-fit.o sunxi-spl.o sunxi-fw.o
+sunxi-fw: sunxi-img.o sunxi-mbr.o sunxi-uboot.o sunxi-fit.o sunxi-spl.o sunxi-fw.o sunxi-toc0.o
 	${CC} -o $@ $^ -lfdt
 
 sunxi-%.o: sunxi-%.c

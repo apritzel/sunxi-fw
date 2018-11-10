@@ -14,6 +14,7 @@ enum image_type {
 	IMAGE_SPL1,
 	IMAGE_SPL2,
 	IMAGE_SPLx,
+	IMAGE_TOC0,
 	IMAGE_UBOOT,
 	IMAGE_FIT,
 	IMAGE_MBR,
@@ -50,6 +51,9 @@ void output_mbr_info(void *sector, FILE *stream, bool verbose);
 void output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 int spl_set_dtname(void *sector, FILE *inf, const char *dts, FILE *outf);
 int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
+
+/* sunxi-toc0.c */
+void output_toc0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 
 /* sunxi-uboot.c */
 void output_uboot_info(void *sector, FILE *inf, FILE *stream, bool verbose);

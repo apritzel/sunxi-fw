@@ -21,6 +21,8 @@
 #define SPL_MAGIC	0x004c5053		// "SPL\0"
 #define IH_MAGIC	0x27051956
 #define FDT_MAGIC	0xd00dfeed
+#define TOC0_MAGIC1	0x30434f54		// "TOC0"
+#define TOC0_MAGIC2	0x484c472e		// ".GLH"
 
 static bool check_image_error(FILE *error, enum image_type type)
 {
@@ -64,6 +66,10 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 				type == IMAGE_SPL1 ? '1' :
 				(type == IMAGE_SPL2 ? '2' : 'x'));
 			output_spl_info(sector, inf, outf, verbose);
+			break;
+		case IMAGE_TOC0:
+			fprintf(outf, "toc0: signed boot image\n");
+			output_toc0_info(sector, inf, outf, verbose);
 			break;
 		case IMAGE_UBOOT:
 			fprintf(outf, "u-boot.img: U-Boot legacy image\n");
@@ -111,6 +117,9 @@ enum image_type identify_image(const void *buffer)
 
 		return IMAGE_UNKNOWN;
 	}
+
+	if (magic[0] == TOC0_MAGIC1 && magic[1] == TOC0_MAGIC2)
+		return IMAGE_TOC0;
 
 	if (((unsigned char *)buffer)[510] == 0x55 &&
 	    ((unsigned char *)buffer)[511] == 0xaa)
