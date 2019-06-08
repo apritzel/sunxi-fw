@@ -23,6 +23,9 @@
 #define FDT_MAGIC	0xd00dfeed
 #define TOC0_MAGIC1	0x30434f54		// "TOC0"
 #define TOC0_MAGIC2	0x484c472e		// ".GLH"
+#define RK_IDBL_RC4	0xfcdc8c3b		// RC4 encoded magic
+#define RK_SIG_RK32	0x32334b52		// "RK32"
+#define RK_SIG_RK33	0x33334b52		// "RK33"
 
 static bool check_image_error(FILE *error, enum image_type type)
 {
@@ -71,6 +74,9 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			fprintf(outf, "toc0: signed boot image\n");
 			output_toc0_info(sector, inf, outf, verbose);
 			break;
+		case IMAGE_ROCKCHIP:
+			fprintf(outf, "spl: Rockchip SPL image\n");
+			return;
 		case IMAGE_UBOOT:
 			fprintf(outf, "u-boot.img: U-Boot legacy image\n");
 			output_uboot_info(sector, inf, outf, verbose);
@@ -83,6 +89,9 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			fprintf(outf, "mbr: MBR\n");
 			output_mbr_info(sector, outf, verbose);
 			pseek(inf, 8192 - 512);
+			break;
+		case IMAGE_UNKNOWN:
+			pseek(inf, (32768 - 8192) - 512);
 			break;
 		default:
 			check_image_error(stderr, type);
@@ -124,6 +133,10 @@ enum image_type identify_image(const void *buffer)
 	if (((unsigned char *)buffer)[510] == 0x55 &&
 	    ((unsigned char *)buffer)[511] == 0xaa)
 		return IMAGE_MBR;
+
+	if (magic[0] == RK_IDBL_RC4 || magic[0] == RK_SIG_RK32 ||
+	    magic[0] == RK_SIG_RK33)
+		return IMAGE_ROCKCHIP;
 
 	return IMAGE_UNKNOWN;
 }
