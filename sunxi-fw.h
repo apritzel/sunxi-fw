@@ -46,10 +46,10 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose);
  */
 
 /* sunxi-mbr.c */
-void output_mbr_info(void *sector, FILE *stream, bool verbose);
+int output_mbr_info(void *sector, FILE *stream, bool verbose);
 
 /* sunxi-spl.c */
-void output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 int spl_set_dtname(void *sector, FILE *inf, const char *dts, FILE *outf);
 int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
 
@@ -62,7 +62,7 @@ void dump_uboot_legacy(void *sector, FILE *inf, FILE *outf, bool payload);
 
 /* sunxi-fit.c */
 void extract_fit_image(void *sector, FILE *inf, FILE *outf, const char *imgname);
-void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose);
+int dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose);
 int dump_dt_names(FILE *inf, FILE *outf);
 
 #endif

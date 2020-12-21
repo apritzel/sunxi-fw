@@ -9,11 +9,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include "sunxi-fw.h"
 
-void output_mbr_info(void *sector, FILE *stream, bool verbose)
+int output_mbr_info(void *sector, FILE *stream, bool verbose)
 {
 	unsigned char *parts = sector + 0x1be;
 	int i;
@@ -51,7 +52,9 @@ void output_mbr_info(void *sector, FILE *stream, bool verbose)
 	}
 	if (first_part == ~0) {
 		fprintf(stream, "\tno partitions defined\n");
-		return;
+		return 0;
 	}
 	fprintf(stream, "\tfirst partition starts at %d KB\n", first_part / 2);
+
+	return 0;
 }

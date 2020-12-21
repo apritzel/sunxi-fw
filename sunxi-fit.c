@@ -100,7 +100,7 @@ static void dump_config_info(void *fdt, int node, FILE *outf, bool verbose)
 	dump_property(fdt, node, "fdt", outf);
 }
 
-void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose)
+int dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose)
 {
 	void *fdt = NULL;
 	ssize_t size;
@@ -111,7 +111,7 @@ void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose)
 	size = read_dt(sector, inf, &fdt);
 	if (size < 0) {
 		fprintf(stderr, "invalid FIT image\n");
-		return;
+		return 0;
 	}
 
 	for (node = fdt_first_subnode(fdt, 0);
@@ -134,6 +134,10 @@ void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose)
 
 	if (fdt)
 		free(fdt);
+
+	pseek(inf, 512 - (size % 512));
+
+	return (size - 1) / 512;
 }
 
 int dump_dt_names(FILE *inf, FILE *outf)
