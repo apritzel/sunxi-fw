@@ -45,7 +45,7 @@ static bool check_image_error(FILE *error, enum image_type type)
 }
 
 /* iterates through an image files to find and report about components */
-void output_image_info(FILE *inf, FILE *outf, bool verbose)
+void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 {
 	char sector[512];
 	enum image_type type;
@@ -77,27 +77,31 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			break;
 		case IMAGE_ROCKCHIP:
 			fprintf(outf, "@%4d: spl: Rockchip SPL image\n", ofs);
-			return;
+			break;
 		case IMAGE_UBOOT:
 			fprintf(outf, "@%4d: u-boot.img: U-Boot legacy image\n",
 				ofs);
 			output_uboot_info(sector, inf, outf, verbose);
-			return;
+			if (!scan_all)
+				return;
+			break;
 		case IMAGE_FIT:
 			fprintf(outf, "@%4d: fit: U-Boot FIT image\n", ofs);
 			ofs += dump_dt_info(sector, inf, outf, verbose);
-			return;
+			if (!scan_all)
+				return;
+			break;
 		case IMAGE_MBR:
 			fprintf(outf, "@%4d: mbr: DOS MBR\n", ofs);
 			ofs += output_mbr_info(sector, outf, verbose);
 			pseek(inf, 8192 - 512);
 			break;
 		case IMAGE_UNKNOWN:
-			pseek(inf, (32768 - 8192) - 512);
 			break;
 		default:
-			check_image_error(stderr, type);
-			return;
+			if (check_image_error(stderr, type))
+				return;
+			break;
 		}
 		ofs++;
 	} while (1);

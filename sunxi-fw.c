@@ -118,7 +118,7 @@ static FILE *open_output_file(const char *outfn, const char *action)
 
 static void usage(FILE *stream, const char *progname)
 {
-	fprintf(stream, "usage: %s <action> [-vh] [-n name] [-o outputfile] [inputfile]\n",
+	fprintf(stream, "usage: %s <action> [-vah] [-n name] [-o outputfile] [inputfile]\n",
 		progname);
 	fprintf(stream, "\tinfo: print information about the image\n");
 	fprintf(stream, "\textract -n <id>: extract part of image\n");
@@ -126,6 +126,7 @@ static void usage(FILE *stream, const char *progname)
 	fprintf(stream, "\tlist-dt-names: list all DT names in FIT image\n");
 	fprintf(stream, "\t-o filename: output file name for extract\n");
 	fprintf(stream, "\t-v: more verbose output\n");
+	fprintf(stream, "\t-a: scan all of input file for parts\n");
 	fprintf(stream, "\t-h: this help screen\n");
 }
 
@@ -135,9 +136,9 @@ int main(int argc, char **argv)
 	int option;
 	char *action, *outfn = NULL;
 	char *name = NULL;
-	bool verbose = false;
+	bool verbose = false, scan_all = false;
 
-	while ((option = getopt(argc, argv, "n:o:hv")) != -1) {
+	while ((option = getopt(argc, argv, "n:o:hva")) != -1) {
 		switch (option) {
 		case 'o':
 			outfn = optarg;
@@ -150,6 +151,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			verbose = true;
+			break;
+		case 'a':
+			scan_all = true;
 			break;
 		case '?':
 			break;
@@ -175,7 +179,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!strcmp(action, "info")) {
-		output_image_info(inf, stdout, verbose);
+		output_image_info(inf, stdout, verbose, scan_all);
 	} else if (!strcmp(action, "extract")) {
 		if (!name) {
 			fprintf(stderr, "%s requires -n <name>\n", action);

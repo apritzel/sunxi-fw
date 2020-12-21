@@ -35,7 +35,7 @@ enum image_type identify_image(const void *buffer);
 int find_firmware_image(FILE *inf, enum image_type img, void *sector,
 			FILE *outf);
 int extract_image(FILE *inf, FILE *outf, const char *extract);
-void output_image_info(FILE *inf, FILE *outf, bool verbose);
+void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all);
 
 /**
  * output_*_info(): output information about image type
