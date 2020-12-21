@@ -54,6 +54,9 @@ int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 int spl_set_dtname(void *sector, FILE *inf, const char *dts, FILE *outf);
 int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
 
+/* sunxi-boot0.c */
+int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+
 /* sunxi-toc0.c */
 void output_toc0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 

@@ -61,7 +61,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 		switch (type) {
 		case IMAGE_BOOT0:
 			fprintf(outf, "@%4d: boot0: Allwinner boot0\n", ofs);
-			pseek(inf, MAX_SPL_SIZE - 512);
+			ofs += output_boot0_info(sector, inf, outf, verbose);
 			break;
 		case IMAGE_SPL1:
 		case IMAGE_SPL2:
