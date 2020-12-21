@@ -93,8 +93,12 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 			break;
 		case IMAGE_MBR:
 			fprintf(outf, "@%4d: mbr: DOS MBR\n", ofs);
-			ofs += output_mbr_info(sector, outf, verbose);
-			pseek(inf, 8192 - 512);
+			ofs += output_mbr_info(sector, inf, outf, verbose);
+			break;
+		case IMAGE_GPT:
+			fprintf(outf, "@%4d: gpt: UEFI GPT\n", ofs);
+			if (!scan_all)
+				pseek(inf, 17408 - 1024);
 			break;
 		case IMAGE_UNKNOWN:
 			break;
@@ -140,6 +144,9 @@ enum image_type identify_image(const void *buffer)
 	if (((unsigned char *)buffer)[510] == 0x55 &&
 	    ((unsigned char *)buffer)[511] == 0xaa)
 		return IMAGE_MBR;
+
+	if (!strncmp(buffer, "EFI PART", 8))
+		return IMAGE_GPT;
 
 	if (magic[0] == RK_IDBL_RC4 || magic[0] == RK_SIG_RK32 ||
 	    magic[0] == RK_SIG_RK33)

@@ -18,6 +18,7 @@ enum image_type {
 	IMAGE_UBOOT,
 	IMAGE_FIT,
 	IMAGE_MBR,
+	IMAGE_GPT,
 	IMAGE_ROCKCHIP,
 };
 
@@ -46,7 +47,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all);
  */
 
 /* sunxi-mbr.c */
-int output_mbr_info(void *sector, FILE *stream, bool verbose);
+int output_mbr_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 
 /* sunxi-spl.c */
 int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);

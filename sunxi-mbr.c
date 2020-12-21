@@ -14,7 +14,34 @@
 
 #include "sunxi-fw.h"
 
-int output_mbr_info(void *sector, FILE *stream, bool verbose)
+static int output_gpt_info(FILE *inf, FILE *stream, bool verbose)
+{
+	uint32_t sector[512 / 4];
+	uint64_t *arr64 = (void *)sector;
+	int ret, nr_entries, entry_size, sectors;
+
+	ret = fread(sector, 512, 1, inf);
+	if (ret == 0 && feof(inf))
+		return -1;
+
+	fprintf(stream, "\tGPT version %08x\n", sector[2]);
+	fprintf(stream, "\tusable disk size: %"PRId64" MB\n",
+		(arr64[6] - arr64[5]) / 2048);
+	nr_entries = sector[20];
+	entry_size = sector[21];
+	sectors = ((nr_entries * entry_size) + 511) / 512;
+	fprintf(stream, "\tnumber of partition entries: %d\n", sector[20]);
+
+	if (!verbose) {
+		pseek(inf, sectors * 512);
+		return 1 + sectors;
+	}
+
+	pseek(inf, sectors * 512);
+	return 1 + sectors;
+}
+
+int output_mbr_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
 	unsigned char *parts = sector + 0x1be;
 	int i;
@@ -37,7 +64,7 @@ int output_mbr_info(void *sector, FILE *stream, bool verbose)
 			break;
 		case 0xee:
 			fprintf(stream, "\tprotective MBR, GPT used\n");
-			continue;
+			return output_gpt_info(inf, stream, verbose);
 		case 0xef:
 			fprintf(stream, "\tpart %d is EFI system partition\n",
 				i + 1);
