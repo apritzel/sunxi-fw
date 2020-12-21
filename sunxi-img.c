@@ -50,6 +50,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 	char sector[512];
 	enum image_type type;
 	size_t ret;
+	int ofs = 0;
 
 	do {
 		ret = fread(sector, 512, 1, inf);
@@ -59,35 +60,36 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 		type = identify_image(sector);
 		switch (type) {
 		case IMAGE_BOOT0:
-			fprintf(outf, "boot0: Allwinner boot0\n");
+			fprintf(outf, "@%4d: boot0: Allwinner boot0\n", ofs);
 			pseek(inf, MAX_SPL_SIZE - 512);
 			break;
 		case IMAGE_SPL1:
 		case IMAGE_SPL2:
 		case IMAGE_SPLx:
-			fprintf(outf, "spl: U-Boot SPLv%c\n",
+			fprintf(outf, "@%4d: spl: U-Boot SPLv%c\n", ofs,
 				type == IMAGE_SPL1 ? '1' :
 				(type == IMAGE_SPL2 ? '2' : 'x'));
-			output_spl_info(sector, inf, outf, verbose);
+			ofs += output_spl_info(sector, inf, outf, verbose);
 			break;
 		case IMAGE_TOC0:
-			fprintf(outf, "toc0: signed boot image\n");
+			fprintf(outf, "@%4d: toc0: signed boot image\n", ofs);
 			output_toc0_info(sector, inf, outf, verbose);
 			break;
 		case IMAGE_ROCKCHIP:
-			fprintf(outf, "spl: Rockchip SPL image\n");
+			fprintf(outf, "@%4d: spl: Rockchip SPL image\n", ofs);
 			return;
 		case IMAGE_UBOOT:
-			fprintf(outf, "u-boot.img: U-Boot legacy image\n");
+			fprintf(outf, "@%4d: u-boot.img: U-Boot legacy image\n",
+				ofs);
 			output_uboot_info(sector, inf, outf, verbose);
 			return;
 		case IMAGE_FIT:
-			fprintf(outf, "fit: U-Boot FIT image\n");
-			dump_dt_info(sector, inf, outf, verbose);
+			fprintf(outf, "@%4d: fit: U-Boot FIT image\n", ofs);
+			ofs += dump_dt_info(sector, inf, outf, verbose);
 			return;
 		case IMAGE_MBR:
-			fprintf(outf, "mbr: MBR\n");
-			output_mbr_info(sector, outf, verbose);
+			fprintf(outf, "@%4d: mbr: DOS MBR\n", ofs);
+			ofs += output_mbr_info(sector, outf, verbose);
 			pseek(inf, 8192 - 512);
 			break;
 		case IMAGE_UNKNOWN:
@@ -97,6 +99,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			check_image_error(stderr, type);
 			return;
 		}
+		ofs++;
 	} while (1);
 }
 
