@@ -31,8 +31,6 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 
 	fprintf(stream, "\tsize: %d bytes\n", boot0[BOOT0_LENGTH]);
 
-	if (boot0[BOOT0_LENGTH] > MAX_SPL_SIZE)
-		fprintf(stream,"\tWARNING: SPL size bigger than 32KB!\n");
 	buffer = malloc(boot0[BOOT0_LENGTH]);
 	if (!buffer)
 		return 0;

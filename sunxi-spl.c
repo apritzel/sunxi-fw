@@ -50,6 +50,7 @@ int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	struct spl_boot_file_head *splhead = sector;
 	uint32_t *buffer, i, chksum = CHECKSUM_SEED;
 	const char *spl_banner;
+	uint32_t length;
 	size_t ret;
 
 	if (splhead->spl_signature[3] >= 2 &&
@@ -58,19 +59,19 @@ int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 		fprintf(stream, "\tDT: %s\n",
 			(char *)splhead + splhead->offset_dt_name);
 
+	length = splhead->length > 32768 ? splhead->length : 32768;
+
 	if (!verbose) {
-		pseek(inf, 32768 - 512);
+		pseek(inf, length - 512);
 		return 63;
 	}
 
 	fprintf(stream, "\tsize: %d bytes\n", splhead->length);
 
-	if (splhead->length > MAX_SPL_SIZE)
-		fprintf(stream, "\tWARNING: SPL size bigger than 32KB!\n");
-	buffer = malloc(MAX_SPL_SIZE);
+	buffer = malloc(length);
 	if (!buffer)
 		return 0;
-	ret = fread(buffer + (512 / 4), 1, MAX_SPL_SIZE - 512, inf);
+	ret = fread(buffer + (512 / 4), 1, length - 512, inf);
 	if (ret < splhead->length - 512) {
 		fprintf(stream, "\tERROR: image file too small\n");
 		free(buffer);
@@ -88,7 +89,7 @@ int output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 		fprintf(stream, "\teGON checksum: 0x%08x, programmed: 0x%08x\n",
 			chksum, splhead->check_sum);
 
-	spl_banner = memstr((char *)buffer, "U-Boot SPL ", MAX_SPL_SIZE);
+	spl_banner = memstr((char *)buffer, "U-Boot SPL ", length);
 	if (spl_banner)
 		fprintf(stream, "\t%s\n", spl_banner);
 
