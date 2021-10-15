@@ -26,6 +26,7 @@
 #define RK_IDBL_RC4	0xfcdc8c3b		// RC4 encoded magic
 #define RK_SIG_RK32	0x32334b52		// "RK32"
 #define RK_SIG_RK33	0x33334b52		// "RK33"
+#define AML_MAGIC	0x4c4d4140		// "@AML"
 
 static bool check_image_error(FILE *error, enum image_type type)
 {
@@ -77,6 +78,9 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 			break;
 		case IMAGE_ROCKCHIP:
 			fprintf(outf, "@%4d: spl: Rockchip SPL image\n", ofs);
+			break;
+		case IMAGE_AML:
+			fprintf(outf, "@%4d: spl: Amlogic SPL image\n", ofs);
 			break;
 		case IMAGE_UBOOT:
 			fprintf(outf, "@%4d: u-boot.img: U-Boot legacy image\n",
@@ -151,6 +155,9 @@ enum image_type identify_image(const void *buffer)
 	if (magic[0] == RK_IDBL_RC4 || magic[0] == RK_SIG_RK32 ||
 	    magic[0] == RK_SIG_RK33)
 		return IMAGE_ROCKCHIP;
+
+	if (magic[0] == AML_MAGIC || magic[4] == AML_MAGIC)
+		return IMAGE_AML;
 
 	return IMAGE_UNKNOWN;
 }

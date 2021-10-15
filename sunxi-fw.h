@@ -18,6 +18,7 @@ enum image_type {
 	IMAGE_MBR,
 	IMAGE_GPT,
 	IMAGE_ROCKCHIP,
+	IMAGE_AML,
 };
 
 /* Like lseek(), but works on pipes as well. Implies SEEK_CUR. */
