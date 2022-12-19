@@ -27,6 +27,8 @@
 #define RK_SIG_RK32	0x32334b52		// "RK32"
 #define RK_SIG_RK33	0x33334b52		// "RK33"
 #define AML_MAGIC	0x4c4d4140		// "@AML"
+#define IMAGEWTY_MAGIC1	0x494d4147		// "IMAG"
+#define IMAGEWTY_MAGIC2	0x45575459		// "EWTY"
 
 static bool check_image_error(FILE *error, enum image_type type)
 {
@@ -104,9 +106,17 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 			if (!scan_all)
 				pseek(inf, 17408 - 1024);
 			break;
+		case IMAGE_PHOENIX:
+			fprintf(outf, "@%4d: wty: PhoenixSuite image file\n",
+				ofs);
+			ofs += output_wty_info(sector, inf, outf, verbose);
+			if (!scan_all)
+				return;
+			break;
 		case IMAGE_UNKNOWN:
 			break;
 		default:
+			fprintf(stderr, "unknown\n");
 			if (check_image_error(stderr, type))
 				return;
 			break;
@@ -119,6 +129,10 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose, bool scan_all)
 enum image_type identify_image(const void *buffer)
 {
 	const uint32_t *magic = buffer;
+
+	if (ntohl(magic[0]) == IMAGEWTY_MAGIC1 &&
+	    ntohl(magic[1]) == IMAGEWTY_MAGIC2)
+		return IMAGE_PHOENIX;
 
 	if (ntohl(magic[0]) == FDT_MAGIC)
 		return IMAGE_FIT;

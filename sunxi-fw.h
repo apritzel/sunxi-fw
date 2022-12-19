@@ -19,6 +19,7 @@ enum image_type {
 	IMAGE_GPT,
 	IMAGE_ROCKCHIP,
 	IMAGE_AML,
+	IMAGE_PHOENIX,
 };
 
 /* Like lseek(), but works on pipes as well. Implies SEEK_CUR. */
@@ -55,6 +56,9 @@ int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
 
 /* sunxi-boot0.c */
 int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+
+/* sunxi-wty.c */
+int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 
 /* sunxi-toc0.c */
 void output_toc0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
