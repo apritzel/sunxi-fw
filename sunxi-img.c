@@ -244,6 +244,8 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 		type = IMAGE_UBOOT;
 	if (!strncmp(extract, "fit", 3))
 		type = IMAGE_FIT;
+	if (!strncmp(extract, "wty", 3))
+		type = IMAGE_PHOENIX;
 
 	ret = find_firmware_image(inf, type, sector, NULL);
 	if (ret)
@@ -269,6 +271,9 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 		return 0;
 	case IMAGE_FIT:
 		extract_fit_image(sector, inf, outf, extract);
+		return 0;
+	case IMAGE_PHOENIX:
+		extract_wty_image(sector, inf, outf, extract);
 		return 0;
 	default:
 		if (check_image_error(stderr, type))

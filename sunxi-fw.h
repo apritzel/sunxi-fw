@@ -59,6 +59,7 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 
 /* sunxi-wty.c */
 int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+void extract_wty_image(void *sector, FILE *inf, FILE *outf, const char *imgname);
 
 /* sunxi-toc0.c */
 void output_toc0_info(void *sector, FILE *inf, FILE *stream, bool verbose);
