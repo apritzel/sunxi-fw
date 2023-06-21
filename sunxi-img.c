@@ -160,7 +160,7 @@ int find_firmware_image(FILE *inf, enum image_type img, void *sector,
 			FILE *outf)
 {
 	enum image_type type;
-	size_t ret;
+	size_t ret, size;
 
 	do {
 		ret = fread(sector, 512, 1, inf);
@@ -189,11 +189,12 @@ int find_firmware_image(FILE *inf, enum image_type img, void *sector,
 		case IMAGE_SPL1:
 		case IMAGE_SPL2:
 		case IMAGE_SPLx:
+			size = ((uint32_t *)sector)[4];
 			if (outf) {
 				fwrite(sector, 512, 1, outf);
-				copy_file(inf, outf, MAX_SPL_SIZE - 512);
+				copy_file(inf, outf, size - 512);
 			} else
-				pseek(inf, MAX_SPL_SIZE - 512);
+				pseek(inf, size - 512);
 			break;
 		case IMAGE_UBOOT:
 		case IMAGE_FIT:
@@ -210,7 +211,7 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 {
 	char sector[512];
 	enum image_type type = IMAGE_UNKNOWN;
-	int ret;
+	int ret, size;
 
 	if (!strcmp(extract, "mbr"))
 		type = IMAGE_MBR;
@@ -235,8 +236,9 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 	case IMAGE_SPL1:
 	case IMAGE_SPL2:
 	case IMAGE_SPLx:
+		size = ((uint32_t *)sector)[4];
 		fwrite(sector, 1, 512, outf);
-		copy_file(inf, outf, MAX_SPL_SIZE - 512);
+		copy_file(inf, outf, size - 512);
 		return 0;
 	case IMAGE_UBOOT:
 		if (!strcmp(extract, "u-boot.img"))

@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_SPL_SIZE	32768
-
 enum image_type {
 	IMAGE_ERROR,
 	IMAGE_SHORT,
