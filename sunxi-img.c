@@ -67,6 +67,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			break;
 		case IMAGE_UBOOT:
 			fprintf(outf, "u-boot.img: U-Boot legacy image\n");
+			output_uboot_info(sector, inf, outf, verbose);
 			return;
 		case IMAGE_FIT:
 			fprintf(outf, "fit: U-Boot FIT image\n");
@@ -199,6 +200,13 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 	case IMAGE_SPLx:
 		fwrite(sector, 1, 512, outf);
 		copy_file(inf, outf, MAX_SPL_SIZE - 512);
+		return 0;
+	case IMAGE_UBOOT:
+		if (!strcmp(extract, "u-boot.img"))
+			dump_uboot_legacy(sector, inf, outf, 0);
+		else if (!strcmp(extract, "u-boot"))
+			dump_uboot_legacy(sector, inf, outf, 1);
+
 		return 0;
 	default:
 		if (check_image_error(stderr, type))

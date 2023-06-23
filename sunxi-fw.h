@@ -49,4 +49,8 @@ void output_mbr_info(void *sector, FILE *stream, bool verbose);
 /* sunxi-spl.c */
 void output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 
+/* sunxi-uboot.c */
+void output_uboot_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+void dump_uboot_legacy(void *sector, FILE *inf, FILE *outf, bool payload);
+
 #endif
