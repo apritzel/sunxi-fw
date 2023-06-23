@@ -55,4 +55,8 @@ int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
 void output_uboot_info(void *sector, FILE *inf, FILE *stream, bool verbose);
 void dump_uboot_legacy(void *sector, FILE *inf, FILE *outf, bool payload);
 
+/* sunxi-fit.c */
+void extract_fit_image(void *sector, FILE *inf, FILE *outf, const char *imgname);
+void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose);
+
 #endif

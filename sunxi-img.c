@@ -71,6 +71,7 @@ void output_image_info(FILE *inf, FILE *outf, bool verbose)
 			return;
 		case IMAGE_FIT:
 			fprintf(outf, "fit: U-Boot FIT image\n");
+			dump_dt_info(sector, inf, outf, verbose);
 			return;
 		case IMAGE_MBR:
 			fprintf(outf, "mbr: MBR\n");
@@ -206,7 +207,9 @@ int extract_image(FILE *inf, FILE *outf, const char *extract)
 			dump_uboot_legacy(sector, inf, outf, 0);
 		else if (!strcmp(extract, "u-boot"))
 			dump_uboot_legacy(sector, inf, outf, 1);
-
+		return 0;
+	case IMAGE_FIT:
+		extract_fit_image(sector, inf, outf, extract);
 		return 0;
 	default:
 		if (check_image_error(stderr, type))
