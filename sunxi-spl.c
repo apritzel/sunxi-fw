@@ -94,3 +94,46 @@ void output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 
 	free(buffer);
 }
+
+int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf)
+{
+	struct spl_boot_file_head *splhead;
+	char sector[512];
+	size_t ret;
+	enum image_type type;
+
+	ret = fread(sector, 1, 512, inf);
+	if (ret < 512) {
+		fprintf(stderr, "Cannot read from input file\n");
+		return -3;
+	}
+
+	type = identify_image(sector);
+	if (type == IMAGE_MBR) {
+		pseek(inf, 8192 - 512);
+
+		ret = fread(sector, 1, 512, inf);
+		if (ret < 512) {
+			fprintf(stderr, "Cannot read from input file\n");
+			return -3;
+		}
+		type = identify_image(sector);
+	}
+
+	if (type != IMAGE_SPL2) {
+		fprintf(stderr, "expecting U-Boot SPLv2\n");
+		return -4;
+	}
+
+	splhead = (void *)sector;
+	if (splhead->spl_signature[3] < 2 ||
+	    splhead->offset_dt_name == 0 ||
+	    splhead->offset_dt_name >= 512) {
+		fprintf(stderr, "no DT name found.\n");
+		return -5;
+	}
+
+	fprintf(outf, "%s\n", sector + splhead->offset_dt_name);
+
+	return 0;
+}

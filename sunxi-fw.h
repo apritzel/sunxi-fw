@@ -48,6 +48,8 @@ void output_mbr_info(void *sector, FILE *stream, bool verbose);
 
 /* sunxi-spl.c */
 void output_spl_info(void *sector, FILE *inf, FILE *stream, bool verbose);
+int spl_set_dtname(void *sector, FILE *inf, const char *dts, FILE *outf);
+int handle_dt_name(FILE *inf, const char *dt_name, FILE *outf);
 
 /* sunxi-uboot.c */
 void output_uboot_info(void *sector, FILE *inf, FILE *stream, bool verbose);
