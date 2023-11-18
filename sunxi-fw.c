@@ -123,6 +123,7 @@ static void usage(FILE *stream, const char *progname)
 	fprintf(stream, "\tinfo: print information about the image\n");
 	fprintf(stream, "\textract -n <id>: extract part of image\n");
 	fprintf(stream, "\tdt-name: print name of board devicetree in SPL header\n");
+	fprintf(stream, "\tlist-dt-names: list all DT names in FIT image\n");
 	fprintf(stream, "\t-o filename: output file name for extract\n");
 	fprintf(stream, "\t-v: more verbose output\n");
 	fprintf(stream, "\t-h: this help screen\n");
@@ -187,6 +188,8 @@ int main(int argc, char **argv)
 		extract_image(inf, outf, name);
 	} else if (!strcmp(action, "dt-name")) {
 		handle_dt_name(inf, name, stdout);
+	} else if (!strcmp(action, "list-dt-names")) {
+		dump_dt_names(inf, stdout);
 	} else {
 		fprintf(stderr, "unknown action verb \"%s\"\n", action);
 		usage(stderr, argv[0]);

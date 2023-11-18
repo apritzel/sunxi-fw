@@ -136,6 +136,52 @@ void dump_dt_info(void *sector, FILE *inf, FILE *outf, bool verbose)
 		free(fdt);
 }
 
+int dump_dt_names(FILE *inf, FILE *outf)
+{
+	void *fdt = NULL;
+	ssize_t size;
+	char sector[512];
+	int node, ret;
+	const char *nodename;
+	const struct fdt_property *prop;
+
+	ret = find_firmware_image(inf, IMAGE_FIT, sector, NULL);
+	if (ret)
+		return ret;
+
+	size = read_dt(sector, inf, &fdt);
+	if (size < 0 || !fdt) {
+		fprintf(stderr, "invalid FIT image\n");
+		if (fdt)
+			free(fdt);
+		return -EINVAL;
+	}
+
+	for (node = fdt_first_subnode(fdt, 0);
+	     node != -FDT_ERR_NOTFOUND;
+	     node = fdt_next_subnode(fdt, node)) {
+		nodename = fdt_get_name(fdt, node, NULL);
+		if (!strcmp(nodename, "configurations"))
+			break;
+	}
+	if (node == -FDT_ERR_NOTFOUND) {
+		free(fdt);
+		return -ENOENT;
+	}
+
+	for (node = fdt_first_subnode(fdt, node);
+	     node != -FDT_ERR_NOTFOUND;
+	     node = fdt_next_subnode(fdt, node)) {
+		prop = fdt_get_property(fdt, node, "description", NULL);
+		if (prop)
+			fprintf(outf, "%s\n", prop->data);
+	}
+
+	free(fdt);
+
+	return 0;
+}
+
 void extract_fit_image(void *sector, FILE *inf, FILE *outf, const char *imgname)
 {
 	void *fdt = NULL;
