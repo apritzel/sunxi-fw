@@ -1,6 +1,7 @@
 SH=/bin/sh
 CC=${CROSS_COMPILE}gcc
 CFLAGS=-Wall -g -O
+PREFIX ?=/usr/local
 
 all: sunxi-fw
 
@@ -14,3 +15,11 @@ sunxi-%.o: sunxi-%.c
 
 clean:
 	rm -f *.o sunxi-fw
+
+install: sunxi-fw
+	install -D -m755 -s sunxi-fw $(PREFIX)/bin/sunxi-fw
+
+uninstall:
+	rm -f $(PREFIX)/bin/sunxi-fw
+
+.PHONY: clean install uninstall
