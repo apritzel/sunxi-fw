@@ -132,13 +132,20 @@ static void usage(FILE *stream, const char *progname)
 
 int main(int argc, char **argv)
 {
+	const struct option longopts[] = {
+		{ .name = "name", .has_arg = required_argument, .val = 'n' },
+		{ .name = "output", .has_arg = required_argument, .val = 'o' },
+		{ .name = "help", .has_arg = no_argument, .val = 'h' },
+		{ .name = "verbose", .has_arg = no_argument, .val = 'v' },
+		{ .name = "all", .has_arg = no_argument, .val = 'a' },
+	};
 	FILE *inf, *outf = NULL;
 	int option;
 	char *action, *outfn = NULL;
 	char *name = NULL;
 	bool verbose = false, scan_all = false;
 
-	while ((option = getopt(argc, argv, "n:o:hva")) != -1) {
+	while ((option = getopt_long(argc, argv, "n:o:hva", longopts, NULL)) != -1) {
 		switch (option) {
 		case 'o':
 			outfn = optarg;
