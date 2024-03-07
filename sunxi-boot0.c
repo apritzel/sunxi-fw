@@ -68,6 +68,39 @@ egon_header_print(FILE *stream, struct egon_header *header)
 	fprintf(stream, "};\n\n");
 }
 
+static int
+egon_checksum_verify(FILE *stream, struct egon_header *header,
+		     uint32_t *sector0, FILE *inf)
+{
+	uint32_t *buffer, chksum = EGON_CHECKSUM_SEED;
+	int i, ret;
+
+	buffer = malloc(header->filesize);
+	if (!buffer)
+		return 0;
+	ret = fread(buffer + (SECTOR_SIZE / 4), 1,
+		    header->filesize - SECTOR_SIZE, inf);
+	if (ret < header->filesize - SECTOR_SIZE) {
+		fprintf(stream, "\tERROR: image file too small\n");
+		free(buffer);
+
+		return ret / SECTOR_SIZE;
+	}
+	memcpy(buffer, sector0, SECTOR_SIZE);
+
+	for (i = 0; i < header->filesize / 4; i++)
+		if (i != 3)
+			chksum += buffer[i];
+	if (chksum == header->checksum)
+		fprintf(stream, "\teGON checksum matches: 0x%08x\n", chksum);
+	else
+		fprintf(stream, "\teGON checksum: 0x%08x, programmed: 0x%08x\n",
+			chksum, header->checksum);
+	free(buffer);
+
+	return ret / SECTOR_SIZE;
+}
+
 struct egon_header_secondary {
 	uint32_t header_size;
 	char header_version[4];
@@ -115,7 +148,6 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
 	struct egon_header *header = sector;
 	struct egon_header_secondary *secondary;
-	uint32_t *buffer, i, chksum = EGON_CHECKSUM_SEED;
 	void *dram_param;
 	size_t ret;
 
@@ -126,28 +158,9 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 
 	fprintf(stream, "\tsize: %d bytes\n", header->filesize);
 
-	buffer = malloc(header->filesize);
-	if (!buffer)
-		return 0;
-	ret = fread(buffer + (SECTOR_SIZE / 4), 1,
-		    header->filesize - SECTOR_SIZE, inf);
-	if (ret < header->filesize - SECTOR_SIZE) {
-		fprintf(stream, "\tERROR: image file too small\n");
-		free(buffer);
-
-		return ret / SECTOR_SIZE;
-	}
-	memcpy(buffer, sector, SECTOR_SIZE);
-
-	for (i = 0; i < header->filesize / 4; i++)
-		if (i != 3)
-			chksum += buffer[i];
-	if (chksum == header->checksum)
-		fprintf(stream, "\teGON checksum matches: 0x%08x\n", chksum);
-	else
-		fprintf(stream, "\teGON checksum: 0x%08x, programmed: 0x%08x\n",
-			chksum, header->checksum);
-	free(buffer);
+	ret = egon_checksum_verify(stream, header, sector, inf);
+	if (ret != ((header->filesize / SECTOR_SIZE) - 1))
+		return ret;
 
 	secondary = (void *) header + header->header_size;
 	dram_param = secondary->dram_param;
