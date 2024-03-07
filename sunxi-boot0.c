@@ -16,6 +16,8 @@
 
 #define __maybe_unused  __attribute__((unused))
 
+#define SECTOR_SIZE 512
+
 struct egon_header {
 	uint32_t jump;
 #define EGON_MAGIC_0 "eGON.BT0"
@@ -118,8 +120,8 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	size_t ret;
 
 	if (!verbose) {
-		pseek(inf, header->filesize - 512);
-		return (header->filesize / 512) - 1;
+		pseek(inf, header->filesize - SECTOR_SIZE);
+		return (header->filesize / SECTOR_SIZE) - 1;
 	}
 
 	fprintf(stream, "\tsize: %d bytes\n", header->filesize);
@@ -127,14 +129,15 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	buffer = malloc(header->filesize);
 	if (!buffer)
 		return 0;
-	ret = fread(buffer + (512 / 4), 1, header->filesize - 512, inf);
-	if (ret < header->filesize - 512) {
+	ret = fread(buffer + (SECTOR_SIZE / 4), 1,
+		    header->filesize - SECTOR_SIZE, inf);
+	if (ret < header->filesize - SECTOR_SIZE) {
 		fprintf(stream, "\tERROR: image file too small\n");
 		free(buffer);
 
-		return ret / 512;
+		return ret / SECTOR_SIZE;
 	}
-	memcpy(buffer, sector, 512);
+	memcpy(buffer, sector, SECTOR_SIZE);
 
 	for (i = 0; i < header->filesize / 4; i++)
 		if (i != 3)
@@ -151,5 +154,5 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 
 	dram_param_raw_print(stream, dram_param);
 
-	return ret / 512;
+	return ret / SECTOR_SIZE;
 }
