@@ -161,12 +161,47 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	struct egon_header *header = sector;
 	size_t ret;
 
+	/*
+	 * This might be superfluous as the upper level already checks for
+	 * this, but we are doing a thorough header check here.
+	 */
+	if (memcmp(header->magic, EGON_MAGIC_0, 8) > 0) {
+		fprintf(stream,
+			"\tERROR: wrong header magic: %c%c%c%c%c%c%c%c\n",
+			header->magic[0], header->magic[1],
+			header->magic[2], header->magic[3],
+			header->magic[4], header->magic[5],
+			header->magic[6], header->magic[7]);
+		return 0;
+	}
+
+	if (header->header_size != sizeof(struct egon_header)) {
+		fprintf(stream, "\tERROR: egon header size mismatch: %d\n",
+			header->header_size);
+		return 0;
+	}
+
+	if (header->filesize & (EGON_FILESIZE_ALIGN - 1)) {
+		fprintf(stream, "\tERROR: boot0 file size not a multiple of "
+			"%d: %d bytes (0x%04X).\n", EGON_FILESIZE_ALIGN,
+			header->filesize, header->filesize);
+		return 0;
+	}
+
+	if (!header->filesize) {
+		fprintf(stream, "\tERROR: boot0 file is supposedly empty: "
+			"0x%04X.\n", header->filesize);
+		return 0;
+	}
+
 	if (verbose) {
 		struct egon_header_secondary *secondary =
 			(void *) header + header->header_size;
 		void *dram_param = secondary->dram_param;
 
-		fprintf(stream, "\tsize: %d bytes\n", header->filesize);
+		fprintf(stream, "Found eGON header.\n");
+		fprintf(stream, "Boot0 Filesize is %dkB.\n",
+			header->filesize >> 10);
 
 		ret = egon_checksum_verify(stream, header, sector, inf);
 		if (ret)
