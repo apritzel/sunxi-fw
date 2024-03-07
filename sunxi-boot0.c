@@ -145,6 +145,102 @@ egon_header_secondary_print(FILE *stream,
 	fprintf(stream, "};\n\n");
 }
 
+/*
+ * should work for A10, A10s, A13 and A20.
+ */
+#define DRAM_PARAM_A10_MATCHES "A10/A10s/A13/A20"
+
+struct dram_param_a10 {
+	uint32_t baseaddr;
+	uint32_t clk;
+	uint32_t type;
+	uint32_t rank_num;
+	uint32_t chip_density;
+	uint32_t io_width;
+	uint32_t bus_width;
+	uint32_t cas;
+	uint32_t zq;
+	uint32_t odt_en;
+	uint32_t size;
+	uint32_t tpr0;
+	uint32_t tpr1;
+	uint32_t tpr2;
+	uint32_t tpr3;
+	uint32_t tpr4;
+	uint32_t tpr5;
+	uint32_t emr1;
+	uint32_t emr2;
+	uint32_t emr3;
+};
+
+static int
+dram_param_a10_validate(FILE *stream, void *raw)
+{
+	struct dram_param_a10 *param = raw;
+	char *message = "Invalid structure for " DRAM_PARAM_A10_MATCHES;
+
+	/* This is a base address, should be 0x40000000 */
+	if (param->baseaddr & 0x0FFFFFFF) {
+		fprintf(stream, "%s: wrong baseaddr: 0x%08X\n", message,
+		       param->baseaddr);
+		return -1;
+	}
+
+	/* MHz */
+	if ((param->clk < 100) || (param->clk > 1000)) {
+		fprintf(stream, "%s: wrong clk: 0x%08X\n", message,
+		       param->clk);
+		return -1;
+	}
+
+	/* 2: DDR2, 3: DDR3 */
+	if ((param->type != 2) && (param->type != 3)) {
+		fprintf(stream, "%s: wrong type: 0x%08X\n", message,
+		       param->type);
+		return -1;
+	}
+
+	if ((param->odt_en != 0) && (param->odt_en != 1)) {
+		fprintf(stream, "%s: wrong odt_en: 0x%08X\n", message,
+		       param->odt_en);
+		return -1;
+	}
+
+	fprintf(stream, "Parameters seem valid for %s.\n",
+		DRAM_PARAM_A10_MATCHES);
+	return 0;
+}
+
+static void
+dram_param_a10_print(FILE *stream, void *raw)
+{
+	struct dram_param_a10 *param = raw;
+
+	fprintf(stream, "\n; %s\n", DRAM_PARAM_A10_MATCHES);
+	fprintf(stream, "[dram para]\n\n");
+	fprintf(stream, "dram_baseaddr\t   = 0x%x\n", param->baseaddr);
+	fprintf(stream, "dram_clk\t   = %d\n", param->clk);
+	fprintf(stream, "dram_type\t   = %d\n", param->type);
+	fprintf(stream, "dram_rank_num\t   = 0x%x\n", param->rank_num);
+	fprintf(stream, "dram_chip_density  = 0x%x\n", param->chip_density);
+	fprintf(stream, "dram_io_width\t   = 0x%x\n", param->io_width);
+	fprintf(stream, "dram_bus_width\t   = 0x%x\n", param->bus_width);
+	fprintf(stream, "dram_cas\t   = 0x%x\n", param->cas);
+	fprintf(stream, "dram_zq\t\t   = 0x%x\n", param->zq);
+	fprintf(stream, "dram_odt_en\t   = %d\n", param->odt_en);
+	fprintf(stream, "dram_size\t   = 0x%x\n", param->size);
+	fprintf(stream, "dram_tpr0\t   = 0x%x\n", param->tpr0);
+	fprintf(stream, "dram_tpr1\t   = 0x%x\n", param->tpr1);
+	fprintf(stream, "dram_tpr2\t   = 0x%x\n", param->tpr2);
+	fprintf(stream, "dram_tpr3\t   = 0x%x\n", param->tpr3);
+	fprintf(stream, "dram_tpr4\t   = 0x%x\n", param->tpr4);
+	fprintf(stream, "dram_tpr5\t   = 0x%x\n", param->tpr5);
+	fprintf(stream, "dram_emr1\t   = 0x%x\n", param->emr1);
+	fprintf(stream, "dram_emr2\t   = 0x%x\n", param->emr2);
+	fprintf(stream, "dram_emr3\t   = 0x%x\n", param->emr3);
+	fprintf(stream, "\n");
+}
+
 static void
 dram_param_raw_print(FILE *stream, void *raw)
 {
@@ -207,7 +303,12 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 		if (ret)
 			return 0;
 
-		dram_param_raw_print(stream, dram_param);
+		fprintf(stream,
+			"\nLooking for a valid dram parameter structure...\n");
+		if (!dram_param_a10_validate(stream, dram_param))
+			dram_param_a10_print(stream, dram_param);
+		else
+			dram_param_raw_print(stream, dram_param);
 	} else {
 		ret = pseek(inf, header->filesize - SECTOR_SIZE);
 		if (ret)
