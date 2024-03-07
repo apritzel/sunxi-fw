@@ -455,6 +455,132 @@ dram_param_h6_print(FILE *stream, void *raw)
 	fprintf(stream, "\n");
 }
 
+/*
+ * Should work for H616/A523/H700
+ * On H616/H700, tpr14 should be zero.
+ */
+#define DRAM_PARAM_H616_MATCHES "H616/H700/A523"
+
+struct dram_param_h616 {
+	uint32_t clk;
+	uint32_t type;
+	uint32_t dx_odt;
+	uint32_t dx_dri;
+	uint32_t ca_dri;
+	uint32_t para0;
+	uint32_t para1;
+	uint32_t para2;
+	uint32_t mr0;
+	uint32_t mr1;
+	uint32_t mr2;
+	uint32_t mr3;
+	uint32_t mr4;
+	uint32_t mr5;
+	uint32_t mr6;
+	uint32_t mr11;
+	uint32_t mr12;
+	uint32_t mr13;
+	uint32_t mr14;
+	uint32_t mr16;
+	uint32_t mr17;
+	uint32_t mr22;
+	uint32_t tpr0;
+	uint32_t tpr1;
+	uint32_t tpr2;
+	uint32_t tpr3;
+	uint32_t tpr6;
+	uint32_t tpr10;
+	uint32_t tpr11;
+	uint32_t tpr12;
+	uint32_t tpr13;
+	uint32_t tpr14;
+};
+
+static int
+dram_param_h616_validate(FILE *stream, void *raw)
+{
+	struct dram_param_h616 *param = raw;
+	char *message = "Invalid structure for " DRAM_PARAM_H616_MATCHES;
+
+	/* MHz */
+	if ((param->clk < 100) || (param->clk > 1200)) {
+		fprintf(stream, "%s: wrong clk: 0x%08X\n", message,
+		       param->clk);
+		return -1;
+	}
+
+	/* 2: DDR2, 3: DDR3, 4: DDR4,
+	   6: LPDDR2, 7: LPDDR3, 8: LPDDR4 */
+	if ((param->type != 2) && (param->type != 3) &&
+	    (param->type != 4) && (param->type != 6) &&
+	    (param->type != 7) && (param->type != 8)) {
+		fprintf(stream, "%s: wrong type: 0x%08X\n", message,
+		       param->type);
+		return -1;
+	}
+
+	if (param->dx_odt & 0xF0F0F0F0) {
+		fprintf(stream, "%s: wrong dx_odt: 0x%08X\n", message,
+		       param->dx_odt);
+		return -1;
+	}
+
+	if (param->dx_dri & 0xF0F0F0F0) {
+		fprintf(stream, "%s: wrong dx_dri: 0x%08X\n", message,
+		       param->dx_dri);
+		return -1;
+	}
+
+	fprintf(stream, "Parameters seem valid for %s.\n",
+		DRAM_PARAM_H616_MATCHES);
+	return 0;
+}
+
+static void
+dram_param_h616_print(FILE *stream, void *raw)
+{
+	struct dram_param_h616 *param = raw;
+
+	fprintf(stream, "\n; For %s\n", DRAM_PARAM_H616_MATCHES);
+	fprintf(stream, "[dram para]\n\n");
+
+	fprintf(stream, "dram_clk\t   = %d,\n", param->clk);
+	fprintf(stream, "dram_type\t   = %d,\n", param->type);
+	fprintf(stream, "dram_dx_odt\t   = 0x%08X,\n", param->dx_odt);
+	fprintf(stream, "dram_dx_dri\t   = 0x%08X,\n", param->dx_dri);
+	fprintf(stream, "dram_ca_dri\t   = 0x%08X,\n", param->ca_dri);
+	fprintf(stream, "dram_para0\t   = 0x%08X, ; aka odt_en on H616/H700\n",
+		param->para0);
+	fprintf(stream, "dram_para1\t   = 0x%08X,\n", param->para1);
+	fprintf(stream, "dram_para2\t   = 0x%08X,\n", param->para2);
+	fprintf(stream, "dram_mr0\t   = 0x%X,\n", param->mr0);
+	fprintf(stream, "dram_mr1\t   = 0x%X,\n", param->mr1);
+	fprintf(stream, "dram_mr2\t   = 0x%X,\n", param->mr2);
+	fprintf(stream, "dram_mr3\t   = 0x%X,\n", param->mr3);
+	fprintf(stream, "dram_mr4\t   = 0x%X,\n", param->mr4);
+	fprintf(stream, "dram_mr5\t   = 0x%X,\n", param->mr5);
+	fprintf(stream, "dram_mr6\t   = 0x%X,\n", param->mr6);
+	fprintf(stream, "dram_mr11\t   = 0x%X,\n", param->mr11);
+	fprintf(stream, "dram_mr12\t   = 0x%X,\n", param->mr12);
+	fprintf(stream, "dram_mr13\t   = 0x%X,\n", param->mr13);
+	fprintf(stream, "dram_mr14\t   = 0x%X,\n", param->mr14);
+	fprintf(stream, "dram_mr16\t   = 0x%X,\n", param->mr16);
+	fprintf(stream, "dram_mr17\t   = 0x%X,\n", param->mr17);
+	fprintf(stream, "dram_mr22\t   = 0x%X,\n", param->mr22);
+	fprintf(stream, "dram_tpr0\t   = 0x%08X,\n", param->tpr0);
+	fprintf(stream, "dram_tpr1\t   = 0x%X,\n", param->tpr1);
+	fprintf(stream, "dram_tpr2\t   = 0x%X,\n", param->tpr2);
+	fprintf(stream, "dram_tpr3\t   = 0x%X,\n", param->tpr3);
+	fprintf(stream, "dram_tpr6\t   = 0x%08X,\n", param->tpr6);
+	fprintf(stream, "dram_tpr10\t   = 0x%08X,\n", param->tpr10);
+	fprintf(stream, "dram_tpr11\t   = 0x%08X,\n", param->tpr11);
+	fprintf(stream, "dram_tpr12\t   = 0x%08X,\n", param->tpr12);
+	fprintf(stream, "dram_tpr13\t   = 0x%X,\n", param->tpr13);
+	fprintf(stream, "dram_tpr14\t   = 0x%X, ; "
+		"unused and 0 on anything but A523\n", param->tpr14);
+	fprintf(stream, "\n");
+}
+
 static void
 dram_param_raw_print(FILE *stream, void *raw)
 {
@@ -525,6 +651,8 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 			dram_param_h6_print(stream, dram_param);
 		else if (!dram_param_a31_validate(stream, dram_param))
 			dram_param_a31_print(stream, dram_param);
+		else if (!dram_param_h616_validate(stream, dram_param))
+			dram_param_h616_print(stream, dram_param);
 		else
 			dram_param_raw_print(stream, dram_param);
 	} else {
