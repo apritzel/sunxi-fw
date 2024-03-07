@@ -241,6 +241,105 @@ dram_param_a10_print(FILE *stream, void *raw)
 	fprintf(stream, "\n");
 }
 
+/*
+ * should work for A31 and relations
+ */
+#define DRAM_PARAM_A31_MATCHES "A31/A23/A33/A83T/A64/H3"
+
+struct dram_param_a31 {
+	uint32_t clk;
+	uint32_t type;
+	uint32_t zq;
+	uint32_t odt_en;
+	uint32_t para1;
+	uint32_t para2;
+	uint32_t mr0;
+	uint32_t mr1;
+	uint32_t mr2;
+	uint32_t mr3;
+	uint32_t tpr0;
+	uint32_t tpr1;
+	uint32_t tpr2;
+	uint32_t tpr3;
+	uint32_t tpr4;
+	uint32_t tpr5;
+	uint32_t tpr6;
+	uint32_t tpr7;
+	uint32_t tpr8;
+	uint32_t tpr9;
+	uint32_t tpr10;
+	uint32_t tpr11;
+	uint32_t tpr12;
+	uint32_t tpr13;
+	uint32_t bits;
+};
+
+static int
+dram_param_a31_validate(FILE *stream, void *raw)
+{
+	struct dram_param_a31 *param = raw;
+	char *message = "Invalid structure for " DRAM_PARAM_A31_MATCHES;
+
+	/* MHz */
+	if ((param->clk < 100) || (param->clk > 1000)) {
+		fprintf(stream, "%s: wrong clk: 0x%08X\n", message,
+		       param->clk);
+		return -1;
+	}
+
+	/* 2: DDR2, 3: DDR3, 6: LPDDR2, 7: LPDDR3 */
+	if ((param->type != 2) && (param->type != 3) &&
+	    (param->type != 6) && (param->type != 7)) {
+		fprintf(stream, "%s: wrong type: 0x%08X\n", message,
+		       param->type);
+		return -1;
+	}
+
+	if ((param->odt_en != 0) && (param->odt_en != 1)) {
+		fprintf(stream, "%s: wrong odt_en: 0x%08X\n", message,
+		       param->odt_en);
+		return -1;
+	}
+
+	fprintf(stream, "Parameters seem valid for %s.\n",
+		DRAM_PARAM_A31_MATCHES);
+	return 0;
+}
+
+static void
+dram_param_a31_print(FILE *stream, void *raw)
+{
+	struct dram_param_a31 *param = raw;
+
+	fprintf(stream, "\n; For %s\n", DRAM_PARAM_A31_MATCHES);
+	fprintf(stream, "[dram para]\n\n");
+	fprintf(stream, "dram_clk\t= %d\n", param->clk);
+	fprintf(stream, "dram_type\t= %d\n", param->type);
+	fprintf(stream, "dram_zq\t\t= 0x%x\n", param->zq);
+	fprintf(stream, "dram_odt_en\t= %d\n", param->odt_en);
+	fprintf(stream, "dram_para1\t= 0x%x\n", param->para1);
+	fprintf(stream, "dram_para2\t= 0x%x\n", param->para2);
+	fprintf(stream, "dram_mr0\t= 0x%x\n", param->mr0);
+	fprintf(stream, "dram_mr1\t= 0x%x\n", param->mr1);
+	fprintf(stream, "dram_mr2\t= 0x%x\n", param->mr2);
+	fprintf(stream, "dram_mr3\t= 0x%x\n", param->mr3);
+	fprintf(stream, "dram_tpr0\t= 0x%08x\n", param->tpr0);
+	fprintf(stream, "dram_tpr1\t= 0x%08x\n", param->tpr1);
+	fprintf(stream, "dram_tpr2\t= 0x%08x\n", param->tpr2);
+	fprintf(stream, "dram_tpr3\t= 0x%08x\n", param->tpr3);
+	fprintf(stream, "dram_tpr4\t= 0x%x\n", param->tpr4);
+	fprintf(stream, "dram_tpr5\t= 0x%x\n", param->tpr5);
+	fprintf(stream, "dram_tpr6\t= 0x%x\n", param->tpr6);
+	fprintf(stream, "dram_tpr7\t= 0x%x\n", param->tpr7);
+	fprintf(stream, "dram_tpr8\t= 0x%x\n", param->tpr8);
+	fprintf(stream, "dram_tpr9\t= 0x%x\n", param->tpr9);
+	fprintf(stream, "dram_tpr10\t= 0x%x\n", param->tpr10);
+	fprintf(stream, "dram_tpr11\t= 0x%08x\n", param->tpr11);
+	fprintf(stream, "dram_tpr12\t= 0x%08x\n", param->tpr12);
+	fprintf(stream, "dram_tpr13\t= 0x%08x\n", param->tpr13);
+	fprintf(stream, "\n");
+}
+
 static void
 dram_param_raw_print(FILE *stream, void *raw)
 {
@@ -307,6 +406,8 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 			"\nLooking for a valid dram parameter structure...\n");
 		if (!dram_param_a10_validate(stream, dram_param))
 			dram_param_a10_print(stream, dram_param);
+		else if (!dram_param_a31_validate(stream, dram_param))
+			dram_param_a31_print(stream, dram_param);
 		else
 			dram_param_raw_print(stream, dram_param);
 	} else {
