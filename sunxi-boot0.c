@@ -159,25 +159,25 @@ dram_param_raw_print(FILE *stream, void *raw)
 int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
 	struct egon_header *header = sector;
-	struct egon_header_secondary *secondary;
-	void *dram_param;
 	size_t ret;
 
-	if (!verbose) {
-		pseek(inf, header->filesize - SECTOR_SIZE);
-		return (header->filesize / SECTOR_SIZE) - 1;
+	if (verbose) {
+		struct egon_header_secondary *secondary =
+			(void *) header + header->header_size;
+		void *dram_param = secondary->dram_param;
+
+		fprintf(stream, "\tsize: %d bytes\n", header->filesize);
+
+		ret = egon_checksum_verify(stream, header, sector, inf);
+		if (ret)
+			return 0;
+
+		dram_param_raw_print(stream, dram_param);
+	} else {
+		ret = pseek(inf, header->filesize - SECTOR_SIZE);
+		if (ret)
+			return 0;
 	}
-
-	fprintf(stream, "\tsize: %d bytes\n", header->filesize);
-
-	ret = egon_checksum_verify(stream, header, sector, inf);
-	if (ret)
-		return 0;
-
-	secondary = (void *) header + header->header_size;
-	dram_param = secondary->dram_param;
-
-	dram_param_raw_print(stream, dram_param);
 
 	return (header->filesize / SECTOR_SIZE) - 1;
 }
