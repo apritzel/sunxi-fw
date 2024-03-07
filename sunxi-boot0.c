@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <stddef.h>
 
 #include "sunxi-fw.h"
 
@@ -72,33 +74,43 @@ static int
 egon_checksum_verify(FILE *stream, struct egon_header *header,
 		     uint32_t *sector0, FILE *inf)
 {
-	uint32_t *buffer, chksum = EGON_CHECKSUM_SEED;
-	int i, ret;
+#define BUFFER_COUNT (SECTOR_SIZE / sizeof(uint32_t))
+	uint32_t buffer[BUFFER_COUNT];
+	uint32_t checksum = EGON_CHECKSUM_SEED;
+	off_t checksum_offset =
+		offsetof(struct egon_header, checksum) / sizeof(uint32_t);
+	off_t offset;
+	int i;
 
-	buffer = malloc(header->filesize);
-	if (!buffer)
-		return 0;
-	ret = fread(buffer + (SECTOR_SIZE / 4), 1,
-		    header->filesize - SECTOR_SIZE, inf);
-	if (ret < header->filesize - SECTOR_SIZE) {
-		fprintf(stream, "\tERROR: image file too small\n");
-		free(buffer);
-
-		return ret / SECTOR_SIZE;
+	/* handle the already read sector separately */
+	for (i = 0; i < BUFFER_COUNT; i++) {
+		if (i == checksum_offset)
+			continue;
+		checksum += sector0[i];
 	}
-	memcpy(buffer, sector0, SECTOR_SIZE);
+	offset = SECTOR_SIZE;
 
-	for (i = 0; i < header->filesize / 4; i++)
-		if (i != 3)
-			chksum += buffer[i];
-	if (chksum == header->checksum)
-		fprintf(stream, "\teGON checksum matches: 0x%08x\n", chksum);
+	for (; offset < header->filesize; offset += SECTOR_SIZE) {
+		int ret;
+
+		ret = fread(buffer, sizeof(uint32_t), BUFFER_COUNT, inf);
+		if (ret != BUFFER_COUNT) {
+			fprintf(stream,	"Error: %s(): fread failed: %s (%d)\n",
+				__func__, strerror(errno), ret);
+			return ret;
+		}
+
+		for (i = 0; i < BUFFER_COUNT; i++)
+			checksum += buffer[i];
+	}
+
+	if (checksum != header->checksum)
+		fprintf(stream, "eGON checksum mismatch: 0x%08X vs 0x%08X\n",
+			checksum, header->checksum);
 	else
-		fprintf(stream, "\teGON checksum: 0x%08x, programmed: 0x%08x\n",
-			chksum, header->checksum);
-	free(buffer);
+		fprintf(stream, "eGON checksum matches.\n");
 
-	return ret / SECTOR_SIZE;
+	return 0;
 }
 
 struct egon_header_secondary {
@@ -159,13 +171,13 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	fprintf(stream, "\tsize: %d bytes\n", header->filesize);
 
 	ret = egon_checksum_verify(stream, header, sector, inf);
-	if (ret != ((header->filesize / SECTOR_SIZE) - 1))
-		return ret;
+	if (ret)
+		return 0;
 
 	secondary = (void *) header + header->header_size;
 	dram_param = secondary->dram_param;
 
 	dram_param_raw_print(stream, dram_param);
 
-	return ret / SECTOR_SIZE;
+	return (header->filesize / SECTOR_SIZE) - 1;
 }
