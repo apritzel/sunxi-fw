@@ -25,8 +25,9 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	bool found_boot0 = false;
 
 	nr_images = wty[15];
-	fprintf(stream, "\theader v%d.%d, %d images, %d MB\n",
-		(wty[2] & 0xff00) >> 8, wty[2] & 0xff, nr_images, wty[6] >> 20);
+	uint64_t size = ((uint64_t)wty[7] << 32) + wty[6];
+	fprintf(stream, "\theader v%d.%d, %d images, %u MB\n",
+		(wty[2] & 0xff00) >> 8, wty[2] & 0xff, nr_images, (uint32_t)(size >> 20));
 	if (!verbose) {
 		pseek(inf, wty[6] - 512);
 		return (wty[6] / 512) - 1;
@@ -46,11 +47,16 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	}
 
 	for (i = 0; i < nr_images; i++) {
-		unsigned int ofs = i * ENTRY_SIZE / 4;
+		uint32_t ofs = i * ENTRY_SIZE / 4;
 		char *name = (char *)&buffer[ofs + 9];
-
-		fprintf(stream, "\t\twty:%-20s: %10d bytes @ +0x%08x\n", name,
-			buffer[ofs + 75], buffer[ofs + 77]);
+		if (size <= 0xFFFFFFFF) {
+			fprintf(stream, "\t\twty:%-20s: %10u bytes @ +0x%08x\n", name,
+				                        buffer[ofs + 75], buffer[ofs + 77]);
+		} else {
+			uint64_t part_size = ((uint64_t)buffer[ofs + 76] << 32)  + buffer[ofs + 75];
+			fprintf(stream, "\t\twty:%-20s: %20lu bytes @ +0x%08x%08x\n", name,
+				                        part_size, buffer[ofs + 78], buffer[ofs + 77]);
+		}
 
 		if (found_boot0)
 			continue;
