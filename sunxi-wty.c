@@ -47,7 +47,7 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	}
 
 	for (i = 0; i < nr_images; i++) {
-		uint32_t ofs = i * ENTRY_SIZE / 4;
+		unsigned int ofs = i * ENTRY_SIZE / 4;
 		char *name = (char *)&buffer[ofs + 9];
 		if (size <= 0xFFFFFFFF) {
 			fprintf(stream, "\t\twty:%-20s: %10u bytes @ +0x%08x\n", name,
