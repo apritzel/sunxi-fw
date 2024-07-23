@@ -10,10 +10,18 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "sunxi-fw.h"
 
 #define ENTRY_SIZE	0x400
+
+static uint64_t read64_le(const uint32_t *buffer, int ofs)
+{
+	uint64_t ret = buffer[ofs + 1];
+
+	return (ret << 32) | buffer[ofs];
+}
 
 int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
@@ -23,10 +31,12 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	size_t ret;
 	uint32_t boot0_ofs = 0;
 	bool found_boot0 = false;
+	uint64_t size;
 
 	nr_images = wty[15];
-	fprintf(stream, "\theader v%d.%d, %d images, %d MB\n",
-		(wty[2] & 0xff00) >> 8, wty[2] & 0xff, nr_images, wty[6] >> 20);
+	size = read64_le(wty, 6);
+	fprintf(stream, "\theader v%d.%d, %d images, %"PRIu64" MB\n",
+		(wty[2] & 0xff00) >> 8, wty[2] & 0xff, nr_images, size >> 20);
 	if (!verbose) {
 		pseek(inf, wty[6] - 512);
 		return (wty[6] / 512) - 1;
@@ -48,9 +58,12 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	for (i = 0; i < nr_images; i++) {
 		unsigned int ofs = i * ENTRY_SIZE / 4;
 		char *name = (char *)&buffer[ofs + 9];
+		uint64_t img_ofs = read64_le(buffer, ofs + 77);
 
-		fprintf(stream, "\t\twty:%-20s: %10d bytes @ +0x%08x\n", name,
-			buffer[ofs + 75], buffer[ofs + 77]);
+		size = read64_le(buffer, ofs + 75);
+		fprintf(stream,
+			"\t\twty:%-20s: %11"PRIu64" bytes @ +0x%010"PRIx64"\n",
+			name, size, img_ofs);
 
 		if (found_boot0)
 			continue;
@@ -59,10 +72,11 @@ int output_wty_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 		found_boot0 = !strcmp(name, "boot0_sdcard.fex");
 	}
 	if (boot0_ofs) {
-		fprintf(stream, "@%4d: boot0: Allwinner boot0\n",
-			buffer[boot0_ofs + 77] / 512);
-		pseek(inf,
-		      buffer[boot0_ofs + 77] - nr_images * ENTRY_SIZE - 1024);
+		uint64_t img_ofs = read64_le(buffer, boot0_ofs + 77);
+
+		fprintf(stream, "@%4"PRId64": boot0: Allwinner boot0\n",
+			img_ofs / 512);
+		pseek(inf, img_ofs - nr_images * ENTRY_SIZE - 1024);
 		ret = fread(buffer, 1, 512, inf);
 		output_boot0_info(buffer, inf, stream, verbose);
 	} else
@@ -90,8 +104,11 @@ void extract_wty_image(void *sector, FILE *inf, FILE *outf, const char *imgname)
 		}
 		name = (char *)&buffer[9];
 		if (!strcmp(name, imgname + 4)) {
-			pseek(inf, buffer[77] - (i + 2) * ENTRY_SIZE);
-			copy_file(inf, outf, buffer[75]);
+			uint64_t img_size = read64_le(buffer, 75);
+			uint64_t img_ofs = read64_le(buffer, 77);
+
+			pseek(inf, img_ofs - (i + 2) * ENTRY_SIZE);
+			copy_file(inf, outf, img_size);
 			return;
 		}
 	}
