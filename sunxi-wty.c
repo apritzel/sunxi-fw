@@ -96,8 +96,10 @@ void extract_wty_image(void *sector, FILE *inf, FILE *outf, const char *imgname)
 		}
 		name = (char *)&buffer[9];
 		if (!strcmp(name, imgname + 4)) {
-			pseek(inf, buffer[77] - (i + 2) * ENTRY_SIZE);
-			copy_file(inf, outf, buffer[75]);
+			uint64_t part_size = ((uint64_t)buffer[76] << 32)  + buffer[75];
+			uint64_t part_offset = ((uint64_t)buffer[78] << 32)  + buffer[77];
+			pseek(inf, part_offset - (i + 2) * ENTRY_SIZE);
+			copy_file(inf, outf, part_size);
 			return;
 		}
 	}
