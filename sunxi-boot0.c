@@ -18,7 +18,7 @@
 #define BOOT0_CHECKSUM	3
 #define BOOT0_LENGTH	4
 #define BOOT0_DRAM_OFS	14
-#define OFS(x) ((x) + BOOT0_DRAM_OFS)
+#define OFS(x) ((x) + 1)
 
 enum dram_para {
 	DRAM_PARAM_NOT_USED = 0,
@@ -101,6 +101,13 @@ enum soc_types {
 	SOC_A133,
 	SOC_H6,
 	NR_SOC_TYPES
+};
+
+static const char *soc_name[] = {
+	[SOC_A64] = "A64",
+	[SOC_H616] = "H616",
+	[SOC_A133] = "A133",
+	[SOC_H6] = "H6",
 };
 
 static int8_t register_mappings[NR_SOC_TYPES][NR_DRAM_PARAMS] = {
@@ -199,6 +206,39 @@ static int8_t register_mappings[NR_SOC_TYPES][NR_DRAM_PARAMS] = {
 	}
 };
 
+void output_boot0_dram_para(const uint32_t *para, FILE *stream, char const* indent)
+{
+	uint32_t i;
+
+	for (i = 0; i < NR_SOC_TYPES; i++)
+		fprintf(stream, "%12s", soc_name[i]);
+
+	fprintf(stream, "\n");
+
+	for (i = 0; i < NR_DRAM_PARAMS; i++) {
+		int ver;
+
+		for (ver = 0; ver < NR_SOC_TYPES; ver++)
+			if (register_mappings[ver][i] &&
+			    para[register_mappings[ver][i] - 1])
+				break;
+		/* if this parameter is unused, skip the output */
+		if (ver == NR_SOC_TYPES)
+			continue;
+
+		fprintf(stream, "%s\t\t%-12s:", indent, param_name[i]);
+
+		for (ver = 0; ver < NR_SOC_TYPES; ver++) {
+			if (register_mappings[ver][i] == 0)
+				fprintf(stream, "           -");
+			else
+				fprintf(stream, "  %#10x",
+					para[register_mappings[ver][i] - 1]);
+		}
+		fprintf(stream, "\n");
+	}
+}
+
 int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
 	const uint32_t *boot0 = sector;
@@ -234,31 +274,8 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 			chksum, boot0[BOOT0_CHECKSUM]);
 	free(buffer);
 
-	fprintf(stream, "\tDRAM parameters:\tA64\t\tH616\t\tA133\n");
-
-	for (i = 0; i < NR_DRAM_PARAMS; i++) {
-		int ver;
-
-		for (ver = 0; ver < NR_SOC_TYPES; ver++)
-			if (register_mappings[ver][i] &&
-			    boot0[register_mappings[ver][i]])
-				break;
-		/* if this parameter is unused, skip the output */
-		if (ver == NR_SOC_TYPES)
-			continue;
-
-
-		fprintf(stream, "\t\t%-12s:", param_name[i]);
-
-		for (ver = 0; ver < NR_SOC_TYPES; ver++) {
-			if (register_mappings[ver][i] == 0)
-				fprintf(stream, "           -");
-			else
-				fprintf(stream, "  %#10x",
-					boot0[register_mappings[ver][i]]);
-		}
-		fprintf(stream, "\n");
-	}
+	fprintf(stream, "\tDRAM parameters:     ");
+	output_boot0_dram_para(&boot0[BOOT0_DRAM_OFS], stream, "\t");
 
 	return ret / 512;
 }
