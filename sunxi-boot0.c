@@ -87,10 +87,10 @@ static const char *param_name[] = {
 	[DRAM_TPR7] = "TPR7",
 	[DRAM_TPR8] = "TPR8",
 	[DRAM_TPR9] = "TPR9",
-	[DRAM_TPR10] = "TRP10",
-	[DRAM_TPR11] = "TRP11",
-	[DRAM_TPR12] = "TRP12",
-	[DRAM_TPR13] = "TRP13",
+	[DRAM_TPR10] = "TPR10",
+	[DRAM_TPR11] = "TPR11",
+	[DRAM_TPR12] = "TPR12",
+	[DRAM_TPR13] = "TPR13",
 };
 
 enum soc_types {
