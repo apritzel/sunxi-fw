@@ -20,6 +20,13 @@
 #define BOOT0_DRAM_OFS	14
 #define OFS(x) ((x) + 1)
 
+#define DRAM_EXT_MAGIC_OFS	210
+#define DRAM_EXT_MAGIC1		0x4d415244	// "DRAM"
+#define DRAM_EXT_MAGIC2		0x7478652e	// ".ext"
+#define DRAM_EXT_PARA_OFS	221
+#define DRAM_EXT_PARA_SIZE	32
+#define DRAM_EXT_PARA_CNT	15
+
 enum dram_para {
 	DRAM_PARAM_NOT_USED = 0,
 	DRAM_CLK,
@@ -238,6 +245,20 @@ static void output_boot0_dram_para(const uint32_t *para, FILE *stream,
 	}
 }
 
+void output_dram_ext_info(const uint32_t *buffer, FILE *stream)
+{
+	uint32_t ofs = DRAM_EXT_PARA_OFS;
+	int i;
+
+	for (i = 0; i < DRAM_EXT_PARA_CNT; i++) {
+		if (buffer[ofs] != 0) {
+			fprintf(stream, "\tDRAM parameters %X:   ", i + 1);
+			output_boot0_dram_para(&buffer[ofs], stream, "\t");
+		}
+		ofs += DRAM_EXT_PARA_SIZE;
+	}
+}
+
 int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 {
 	const uint32_t *boot0 = sector;
@@ -271,10 +292,15 @@ int output_boot0_info(void *sector, FILE *inf, FILE *stream, bool verbose)
 	else
 		fprintf(stream, "\teGON checksum: 0x%08x, programmed: 0x%08x\n",
 			chksum, boot0[BOOT0_CHECKSUM]);
-	free(buffer);
 
 	fprintf(stream, "\tDRAM parameters:     ");
 	output_boot0_dram_para(&boot0[BOOT0_DRAM_OFS], stream, "\t");
+
+	if (buffer[DRAM_EXT_MAGIC_OFS] == DRAM_EXT_MAGIC1 &&
+	    buffer[DRAM_EXT_MAGIC_OFS + 1] == DRAM_EXT_MAGIC2)
+		output_dram_ext_info(buffer, stream);
+
+	free(buffer);
 
 	return ret / 512;
 }
